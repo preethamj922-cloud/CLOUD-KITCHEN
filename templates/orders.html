@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Orders — Cloud Kitchen{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>Orders</h1>
+      <p>All orders placed through your kitchen</p>
+    </div>
+    <a href="/order" class="btn btn-primary">+ New Order</a>
+  </div>
+
+  {% if orders %}
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th>Items</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td class="mono" style="color:var(--text-dim);">{{ order['id'] }}</td>
+            <td class="primary">{{ order['customer_name'] }}</td>
+            <td class="mono" style="font-size:0.82rem;">{{ order['customer_number'] or '—' }}</td>
+            <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-muted); font-size:0.85rem;">
+              {{ order['item_name'] }}
+            </td>
+            <td>
+              <span class="badge">{{ order['quantity'] }}</span>
+            </td>
+            <td class="accent">₹{{ "%.2f"|format(order['total']) }}</td>
+            <td class="mono" style="font-size:0.8rem; color:var(--text-dim);">{{ order['date'][:10] }}</td>
+            <td>
+              <div class="actions">
+                <a href="/orders/{{ order['id'] }}" class="btn btn-ghost btn-sm">View</a>
+                <a href="/bill/{{ order['id'] }}" class="btn btn-primary btn-sm">Bill</a>
+                <a href="/delete_order/{{ order['id'] }}" class="btn btn-danger btn-sm"
+                  onclick="return confirm('Delete this order?')">Del</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <h3>No orders yet</h3>
+      <p>Once you place orders, they'll appear here.</p>
+      <a href="/order" class="btn btn-primary">Place First Order</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

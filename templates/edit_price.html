@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Edit Item — Cloud Kitchen{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 520px;">
+  <div class="page-header">
+    <h1>Edit Item</h1>
+    <p>Update name or price for this menu item</p>
+  </div>
+
+  <div class="card">
+    <form method="POST">
+      <div class="form-group">
+        <label>Item Name</label>
+        <input type="text" name="name" value="{{ item['name'] }}" required>
+      </div>
+      <div class="form-group">
+        <label>Price (₹)</label>
+        <input type="number" name="price" value="{{ item['price'] }}" step="0.01" min="0" required>
+      </div>
+      <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

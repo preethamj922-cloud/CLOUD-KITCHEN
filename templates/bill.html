@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Bill #{{ order['id'] }} — Cloud Kitchen{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px;">
+
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1>Bill</h1>
+      <p>Order #{{ order['id'] }} &nbsp;·&nbsp; {{ order['date'] }}</p>
+    </div>
+    <button onclick="window.print()" class="btn btn-ghost">🖨 Print</button>
+  </div>
+
+  <div class="card" id="bill-card">
+
+    <!-- Header -->
+    <div style="text-align:center; padding-bottom:1.25rem; border-bottom:1px solid var(--border); margin-bottom:1.25rem;">
+      <div style="font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900; color:var(--accent);">
+        {{ kitchen_name }}
+      </div>
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">{{ kitchen_address }}</div>
+    </div>
+
+    <!-- Customer -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1.25rem;">
+      <div>
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:0.2rem;">Customer</div>
+        <div style="font-weight:600; color:var(--text);">{{ order['customer_name'] }}</div>
+      </div>
+      {% if order['customer_number'] %}
+      <div>
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:0.2rem;">Phone</div>
+        <div style="font-family:'DM Mono',monospace; font-size:0.875rem; color:var(--text-muted);">{{ order['customer_number'] }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Items -->
+    <div style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:1rem 0; margin-bottom:1.25rem;">
+      <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:0.75rem;">Items Ordered</div>
+      {% for item_line in order['item_name'].split(', ') %}
+      <div style="display:flex; justify-content:space-between; padding:0.3rem 0; color:var(--text-muted); font-size:0.9rem;">
+        <span>{{ item_line }}</span>
+      </div>
+      {% endfor %}
+      <div style="margin-top:0.5rem; color:var(--text-dim); font-size:0.8rem;">
+        Total qty: {{ order['quantity'] }} item(s)
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted); font-size:0.9rem;">
+        <span>Subtotal</span>
+        <span style="font-family:'DM Mono',monospace;">₹{{ "%.2f"|format(subtotal) }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted); font-size:0.9rem;">
+        <span>GST (5%)</span>
+        <span style="font-family:'DM Mono',monospace;">₹{{ "%.2f"|format(gst) }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-top:0.75rem; border-top:1px solid var(--border); margin-top:0.25rem;">
+        <span style="font-weight:700; font-size:1.05rem; color:var(--text);">Total</span>
+        <span style="font-family:'DM Mono',monospace; font-size:1.2rem; font-weight:700; color:var(--accent);">₹{{ "%.2f"|format(total) }}</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center; margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.8rem;">
+      Thank you for your order! 🙏
+    </div>
+  </div>
+
+  <div style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+    <a href="/order" class="btn btn-primary">New Order</a>
+    <a href="/orders" class="btn btn-ghost">All Orders</a>
+  </div>
+</div>
+
+<style>
+@media print {
+  nav, .flash-container, .page-header button, div[style*="margin-top:1.25rem"] { display: none !important; }
+  body { background: white; color: black; }
+  #bill-card { border: 1px solid #ccc; }
+}
+</style>
+{% endblock %}

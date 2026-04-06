@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Place Order — Cloud Kitchen{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 640px;">
+  <div class="page-header">
+    <h1>Place Order</h1>
+    <p>Fill in customer details and select items</p>
+  </div>
+
+  <form method="POST">
+    <!-- Customer Info -->
+    <div class="card" style="margin-bottom: 1rem;">
+      <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); font-weight:600; margin-bottom:1rem;">Customer Details</p>
+      <div class="form-group">
+        <label>Customer Name</label>
+        <input type="text" name="customer_name" placeholder="Full name" required>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Phone Number</label>
+        <input type="text" name="customer_number" placeholder="10-digit number">
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card" style="padding:0; overflow:hidden; margin-bottom:1rem;">
+      <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border);">
+        <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); font-weight:600;">Select Items & Quantities</p>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Price</th>
+              <th>Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr data-price="{{ item['price'] }}">
+              <td class="primary">{{ item['name'] }}</td>
+              <td class="accent">₹{{ "%.2f"|format(item['price']) }}</td>
+              <td>
+                <input type="hidden" name="item_id" value="{{ item['id'] }}">
+                <input type="number" name="quantity" value="0" min="0" max="50"
+                  style="width:70px; padding:0.4rem 0.5rem; text-align:center;">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem; display:flex; justify-content:space-between; gap:1rem; align-items:center;">
+      <div>
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); margin-bottom:0.35rem;">Order summary</div>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; color:var(--text);"><span>Total items: <strong id="order-count">0</strong></span><span>Total amount: <strong id="order-total">₹0.00</strong></span></div>
+      </div>
+      <div style="font-size:0.85rem; color:var(--text-muted);">The order total updates as you add quantities.</div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary">Confirm Order →</button>
+      <a href="/" class="btn btn-ghost">Cancel</a>
+    </div>
+
+    <script>
+      const quantityInputs = document.querySelectorAll('input[name="quantity"]');
+      const orderCount = document.getElementById('order-count');
+      const orderTotal = document.getElementById('order-total');
+
+      function updateOrderSummary() {
+        let count = 0;
+        let total = 0;
+
+        document.querySelectorAll('tbody tr').forEach(row => {
+          const price = parseFloat(row.dataset.price) || 0;
+          const qty = parseInt(row.querySelector('input[name="quantity"]').value, 10) || 0;
+          count += qty;
+          total += price * qty;
+        });
+
+        orderCount.textContent = count;
+        orderTotal.textContent = `₹${total.toFixed(2)}`;
+      }
+
+      quantityInputs.forEach(input => {
+        input.addEventListener('input', updateOrderSummary);
+      });
+
+      updateOrderSummary();
+    </script>
+  </form>
+</div>
+{% endblock %}

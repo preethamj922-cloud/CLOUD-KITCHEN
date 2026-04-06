@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Menu — Cloud Kitchen{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>Menu</h1>
+      <p>{{ current_date }} &nbsp;·&nbsp; {{ current_time }}</p>
+    </div>
+    <a href="/add" class="btn btn-primary">+ Add Item</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Menu Items</div>
+      <div class="stat-value">{{ items|length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-value">{{ total_orders }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Revenue</div>
+      <div class="stat-value">₹{{ "%.0f"|format(total_revenue) }}</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  {% if items %}
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item Name</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="mono" style="color: var(--text-dim);">{{ loop.index }}</td>
+          <td class="primary">{{ item['name'] }}</td>
+          <td class="accent">₹{{ "%.2f"|format(item['price']) }}</td>
+          <td>
+            <div class="actions">
+              <a href="/edit_price/{{ item['id'] }}" class="btn btn-ghost btn-sm">Edit</a>
+              <a href="/delete/{{ item['id'] }}" class="btn btn-danger btn-sm"
+                onclick="return confirm('Remove {{ item['name'] }}?')">Delete</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 1.5rem; display:flex; gap: 0.75rem;">
+    <a href="/order" class="btn btn-primary">Place New Order</a>
+    <a href="/orders" class="btn btn-ghost">View All Orders</a>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">🍽️</div>
+      <h3>No menu items yet</h3>
+      <p>Start by adding the dishes your kitchen serves.</p>
+      <a href="/add" class="btn btn-primary">Add First Item</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
