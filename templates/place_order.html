@@ -1,97 +1,202 @@
-{% extends "base.html" %}
-{% block title %}Place Order — Cloud Kitchen{% endblock %}
-
-{% block content %}
-<div class="container" style="max-width: 640px;">
-  <div class="page-header">
-    <h1>Place Order</h1>
-    <p>Fill in customer details and select items</p>
-  </div>
-
-  <form method="POST">
-    <!-- Customer Info -->
-    <div class="card" style="margin-bottom: 1rem;">
-      <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); font-weight:600; margin-bottom:1rem;">Customer Details</p>
-      <div class="form-group">
-        <label>Customer Name</label>
-        <input type="text" name="customer_name" placeholder="Full name" required>
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label>Phone Number</label>
-        <input type="text" name="customer_number" placeholder="10-digit number">
-      </div>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Place Order - Cloud Kitchen Billing System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root {
+    --bg-start: #090b11;
+    --bg-end: #141723;
+    --panel: rgba(12, 12, 14, 0.92);
+    --panel-border: rgba(255,179,71,0.24);
+    --accent: #FFB347;
+    --accent-soft: rgba(255,179,71,0.08);
+    --accent-strong: #ffcb70;
+    --muted: #c7c7c7;
+    --text: #f7f7f7;
+    --danger: #d6333a;
+    --danger-hover: #b02a37;
+}
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, rgba(255,179,71,0.14), transparent 28%), linear-gradient(135deg, var(--bg-start), var(--bg-end));
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.page-shell {
+    padding: 2rem 1rem 3rem;
+}
+.card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 22px;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+}
+.page-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.page-title h2 {
+    color: var(--accent);
+    font-weight: 700;
+}
+.page-title p {
+    color: var(--muted);
+}
+.form-control {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,179,71,0.25);
+    border-radius: 14px;
+    color: var(--text) !important;
+    padding: 1rem;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 0.2rem rgba(255,179,71,0.18);
+    background: rgba(255,255,255,0.12);
+    color: var(--text) !important;
+}
+.form-control::placeholder {
+    color: var(--muted) !important;
+}
+.form-label {
+    color: var(--accent);
+    font-weight: 600;
+}
+.item-card {
+    background: var(--accent-soft);
+    border: 1px solid rgba(255,179,71,0.22);
+    border-radius: 18px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: transform 0.25s ease, background 0.25s ease;
+}
+.item-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255,179,71,0.14);
+}
+.item-name {
+    font-size: 1.05rem;
+    color: #ffe1aa;
+}
+.item-price {
+    color: var(--muted);
+}
+.btn {
+    border-radius: 999px;
+    border: none;
+    font-weight: 700;
+    padding: 0.95rem 1.75rem;
+    color: black;
+}
+.btn-primary {
+    background: var(--accent);
+}
+.btn-success {
+    background: #28a745; /* Bootstrap green */
+    color: white;
+}
+.btn-primary:hover {
+    background: var(--accent-strong);
+}
+.btn-success:hover {
+    background: #218838; /* Darker green */
+}
+.btn-secondary {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--panel-border);
+}
+.btn-secondary:hover {
+    background: rgba(255,179,71,0.2);
+}
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+.alert-danger {
+    background: rgba(214,51,58,0.92);
+    border: 1px solid #b02a37;
+    color: white;
+    border-radius: 14px;
+}
+.text-muted {
+    color: var(--muted) !important;
+}
+.no-items {
+    text-align: center;
+    color: var(--muted);
+}
+</style>
+</head>
+<body>
+<div class="page-shell container-lg">
+    <div class="card p-4 mx-auto" style="max-width: 900px;">
+        <div class="page-title">
+            <i class="fas fa-shopping-cart" style="font-size: 3rem; color: #FFB347;"></i>
+            <h2>Place New Order</h2>
+            <p>Create a delicious order for your customer.</p>
+        </div>
+        {% if error %}
+        <div class="alert alert-danger mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+        <form method="POST" action="/order">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" name="customer_name" class="form-control" placeholder="Enter customer name" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" name="customer_number" class="form-control" placeholder="Enter phone number" required>
+                </div>
+            </div>
+            <hr style="border-color: rgba(255,179,71,0.2);">
+            <h5 class="mb-3 text-warning"><i class="fas fa-utensils me-2"></i>Menu Items</h5>
+            {% if items %}
+                {% for item in items %}
+                <div class="item-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="item-name">{{ item[1] }}</div>
+                            <div class="item-price">₹{{ item[2] }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Quantity</label>
+                            <input type="hidden" name="item_id" value="{{ item[0] }}">
+                            <input type="number" name="quantity" min="0" value="0" class="form-control" style="width: 90px;">
+                        </div>
+                        <div class="col-md-3 text-md-end mt-3 mt-md-0">
+                            <small class="text-muted">Enter the number of servings.</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-items py-5">
+                    <i class="fas fa-inbox fa-3x mb-3" style="color: rgba(255,179,71,0.35);"></i>
+                    <h5>No menu items available</h5>
+                    <p>Please add menu items before placing orders.</p>
+                </div>
+            {% endif %}
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success me-3">
+                    <i class="fas fa-check-circle me-2"></i>Confirm Order
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Menu
+                </a>
+            </div>
+        </form>
     </div>
-
-    <!-- Items -->
-    <div class="card" style="padding:0; overflow:hidden; margin-bottom:1rem;">
-      <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border);">
-        <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); font-weight:600;">Select Items & Quantities</p>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Price</th>
-              <th>Qty</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in items %}
-            <tr data-price="{{ item['price'] }}">
-              <td class="primary">{{ item['name'] }}</td>
-              <td class="accent">₹{{ "%.2f"|format(item['price']) }}</td>
-              <td>
-                <input type="hidden" name="item_id" value="{{ item['id'] }}">
-                <input type="number" name="quantity" value="0" min="0" max="50"
-                  style="width:70px; padding:0.4rem 0.5rem; text-align:center;">
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:1rem; display:flex; justify-content:space-between; gap:1rem; align-items:center;">
-      <div>
-        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); margin-bottom:0.35rem;">Order summary</div>
-        <div style="display:flex; gap:1rem; flex-wrap:wrap; color:var(--text);"><span>Total items: <strong id="order-count">0</strong></span><span>Total amount: <strong id="order-total">₹0.00</strong></span></div>
-      </div>
-      <div style="font-size:0.85rem; color:var(--text-muted);">The order total updates as you add quantities.</div>
-    </div>
-
-    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-      <button type="submit" class="btn btn-primary">Confirm Order →</button>
-      <a href="/" class="btn btn-ghost">Cancel</a>
-    </div>
-
-    <script>
-      const quantityInputs = document.querySelectorAll('input[name="quantity"]');
-      const orderCount = document.getElementById('order-count');
-      const orderTotal = document.getElementById('order-total');
-
-      function updateOrderSummary() {
-        let count = 0;
-        let total = 0;
-
-        document.querySelectorAll('tbody tr').forEach(row => {
-          const price = parseFloat(row.dataset.price) || 0;
-          const qty = parseInt(row.querySelector('input[name="quantity"]').value, 10) || 0;
-          count += qty;
-          total += price * qty;
-        });
-
-        orderCount.textContent = count;
-        orderTotal.textContent = `₹${total.toFixed(2)}`;
-      }
-
-      quantityInputs.forEach(input => {
-        input.addEventListener('input', updateOrderSummary);
-      });
-
-      updateOrderSummary();
-    </script>
-  </form>
 </div>
-{% endblock %}
+</body>
+</html>

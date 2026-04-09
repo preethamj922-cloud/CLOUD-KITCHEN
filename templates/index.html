@@ -1,79 +1,309 @@
-{% extends "base.html" %}
-{% block title %}Menu — Cloud Kitchen{% endblock %}
-
-{% block content %}
-<div class="container">
-
-  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
-    <div>
-      <h1>Menu</h1>
-      <p>{{ current_date }} &nbsp;·&nbsp; {{ current_time }}</p>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Cloud Kitchen Billing System - Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root {
+    --bg-start: #090b11;
+    --bg-end: #141723;
+    --panel: rgba(12, 12, 14, 0.92);
+    --panel-border: rgba(255,179,71,0.24);
+    --accent: #FFB347;
+    --accent-soft: rgba(255,179,71,0.08);
+    --accent-strong: #ffcb70;
+    --muted: #c7c7c7;
+    --text: #f7f7f7;
+    --danger: #d6333a;
+    --danger-hover: #b02a37;
+}
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, rgba(255,179,71,0.14), transparent 28%), linear-gradient(135deg, var(--bg-start), var(--bg-end));
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+}
+.page-shell {
+    padding: 2rem 1rem 3rem;
+}
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.page-header h2 {
+    margin: 0;
+    color: var(--accent);
+}
+.page-header p {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+}
+.btn-primary {
+    border-radius: 18px;
+    border: none;
+    background: var(--accent);
+    color: black;
+    font-weight: 700;
+}
+.btn-success {
+    border-radius: 18px;
+    border: none;
+    background: #28a745;
+    color: white;
+    font-weight: 700;
+}
+.btn-secondary {
+    border-radius: 18px;
+    border: 1px solid var(--panel-border);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+}
+.btn-danger {
+    border-radius: 18px;
+    border: none;
+    background: var(--danger);
+    color: white;
+    font-weight: 700;
+}
+.btn-primary:hover {
+    background: var(--accent-strong);
+}
+.btn-success:hover {
+    background: #218838;
+}
+.btn-secondary:hover {
+    background: rgba(255,179,71,0.18);
+}
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+.form-control {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,179,71,0.18);
+    border-radius: 14px;
+    color: var(--text);
+    padding: 0.9rem 1rem;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 0.2rem rgba(255,179,71,0.18);
+    background: rgba(255,255,255,0.12);
+    color: var(--text);
+}
+.form-label {
+    color: var(--accent);
+    font-weight: 600;
+}
+.info-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,179,71,0.14);
+    color: var(--text);
+}
+.info-box strong {
+    color: var(--accent);
+}
+.card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+    color: var(--text);
+}
+.stats-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    margin-bottom: 1.5rem;
+}
+.stat-card {
+    border-radius: 18px;
+    border: 1px solid rgba(255,179,71,0.18);
+    padding: 1.25rem;
+    background: var(--accent-soft);
+}
+.stat-card h5 {
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+}
+.stat-card p {
+    margin: 0;
+    color: var(--text);
+}
+.table {
+    border-radius: 1rem;
+    overflow: hidden;
+    background: rgba(255,255,255,0.05);
+}
+.table thead th {
+    background: var(--accent);
+    color: black;
+    border: none;
+}
+.table tbody td {
+    border-color: rgba(255,179,71,0.2);
+    vertical-align: middle;
+}
+.table tbody tr:hover {
+    background: rgba(255,179,71,0.08);
+}
+.footer {
+    text-align: center;
+    padding: 1rem 0;
+    color: var(--muted);
+}
+.footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+.text-muted {
+    color: var(--muted) !important;
+}
+</style>
+</head>
+<body>
+<div class="page-shell container-lg">
+    <div class="page-header">
+        <div>
+            <h2><i class="fas fa-utensils me-2"></i>Cloud Kitchen Billing System Dashboard</h2>
+            <p>Manage your kitchen menu, track today's orders, and keep your dashboard aligned.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="/order" class="btn btn-primary">
+                <i class="fas fa-cart-plus me-2"></i>Place Order
+            </a>
+            <a href="/orders" class="btn btn-secondary">
+                <i class="fas fa-receipt me-2"></i>View Orders
+            </a>
+            {% if is_owner == 1 %}
+            <a href="/admin" class="btn btn-success">
+                <i class="fas fa-shield-alt me-2"></i>Admin Panel
+            </a>
+            {% endif %}
+            <a href="/logout" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+        </div>
     </div>
-    <a href="/add" class="btn btn-primary">+ Add Item</a>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label">Menu Items</div>
-      <div class="stat-value">{{ items|length }}</div>
+    <div class="stats-grid mb-4">
+        <div class="stat-card">
+            <h5>Hello, {{ username or 'Chef' }}</h5>
+            <p>Active menu items: <strong>{{ items|length }}</strong></p>
+        </div>
+        <div class="stat-card">
+            <h5>Today's Orders</h5>
+            <p>Orders created today: <strong>{{ today_orders }}</strong></p>
+        </div>
+        <div class="stat-card">
+            <h5>Today's Revenue</h5>
+            <p>Revenue today: <strong>₹{{ today_revenue }}</strong></p>
+        </div>
+        <div class="stat-card">
+            <h5>Total Orders</h5>
+            <p>All orders recorded: <strong>{{ total_orders }}</strong></p>
+        </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Orders</div>
-      <div class="stat-value">{{ total_orders }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Revenue</div>
-      <div class="stat-value">₹{{ "%.0f"|format(total_revenue) }}</div>
-    </div>
-  </div>
-
-  <!-- Table -->
-  {% if items %}
-  <div class="card" style="padding: 0; overflow: hidden;">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Item Name</th>
-          <th>Price</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td class="mono" style="color: var(--text-dim);">{{ loop.index }}</td>
-          <td class="primary">{{ item['name'] }}</td>
-          <td class="accent">₹{{ "%.2f"|format(item['price']) }}</td>
-          <td>
-            <div class="actions">
-              <a href="/edit_price/{{ item['id'] }}" class="btn btn-ghost btn-sm">Edit</a>
-              <a href="/delete/{{ item['id'] }}" class="btn btn-danger btn-sm"
-                onclick="return confirm('Remove {{ item['name'] }}?')">Delete</a>
+    <div class="card p-4 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
+            <div>
+                <h4 class="mb-1">Kitchen Settings</h4>
+                <p class="text-muted mb-0">Update your kitchen information for bills and branding.</p>
             </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div style="margin-top: 1.5rem; display:flex; gap: 0.75rem;">
-    <a href="/order" class="btn btn-primary">Place New Order</a>
-    <a href="/orders" class="btn btn-ghost">View All Orders</a>
-  </div>
-
-  {% else %}
-  <div class="card">
-    <div class="empty">
-      <div class="empty-icon">🍽️</div>
-      <h3>No menu items yet</h3>
-      <p>Start by adding the dishes your kitchen serves.</p>
-      <a href="/add" class="btn btn-primary">Add First Item</a>
+            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#settingsCollapse" aria-expanded="false">
+                <i class="fas fa-cog me-2"></i>Edit Settings
+            </button>
+        </div>
+        <div class="collapse" id="settingsCollapse">
+            <form method="POST" action="/update_settings">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Kitchen Name</label>
+                        <input type="text" name="kitchen_name" class="form-control" value="{{ kitchen_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Kitchen Address</label>
+                        <input type="text" name="kitchen_address" class="form-control" value="{{ kitchen_address }}" required>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="p-3 info-box rounded">
+                    <strong>Kitchen Name:</strong><br>
+                    {{ kitchen_name }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 info-box rounded">
+                    <strong>Kitchen Address:</strong><br>
+                    {{ kitchen_address }}
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  {% endif %}
-
+    <div class="card p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+            <div>
+                <h4 class="mb-1">Current Menu</h4>
+                <p class="text-muted mb-0">Review and update your available menu items.</p>
+            </div>
+            <a href="/add" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Add Menu Item
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item[1] }}</td>
+                        <td>₹{{ item[2] }}</td>
+                        <td>
+                            <a href="/edit_price/{{ item[0] }}" class="btn btn-sm btn-primary me-2">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="/delete/{{ item[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if not items %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-box-open fa-3x mb-3" style="color: rgba(255,179,71,0.45);"></i>
+            <h5>No menu items yet</h5>
+            <p>Start by adding your first item to the kitchen menu.</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="footer mt-4">
+        2026 Cloud Kitchen Billing System | Developed by Preetham Jagadeesh
+    </div>
 </div>
-{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
