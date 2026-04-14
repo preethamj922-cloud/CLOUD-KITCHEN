@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
@@ -204,9 +204,51 @@ def admin():
     cursor.execute("SELECT id, username, password, kitchen_name, kitchen_address, is_owner FROM users ORDER BY id DESC")
     all_users = cursor.fetchall()
     
+    # Global Stats
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM orders")
+    stats = cursor.fetchone()
+    global_orders = stats[0] if stats else 0
+    global_revenue = stats[1] if stats else 0
+
     conn.close()
     
-    return render_template("admin.html", users=all_users)
+    return render_template("admin.html", users=all_users, total_users=total_users, global_orders=global_orders, global_revenue=global_revenue)
+
+
+# ---------------- IMPERSONATE USER (ADMIN) ----------------
+@app.route("/admin/impersonate/<int:target_user_id>")
+def admin_impersonate(target_user_id):
+    if not session.get("user_id"):
+        return redirect("/login")
+    
+    user_id = session.get("user_id")
+    
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Check if current user is owner
+    cursor.execute("SELECT is_owner FROM users WHERE id=?", (user_id,))
+    user_info = cursor.fetchone()
+    
+    if not user_info or user_info[0] != 1:
+        conn.close()
+        return "Access Denied", 403
+        
+    # Get target user info
+    cursor.execute("SELECT username FROM users WHERE id=?", (target_user_id,))
+    target_user = cursor.fetchone()
+    
+    conn.close()
+    
+    if target_user:
+        session["user_id"] = target_user_id
+        session["user"] = target_user[0]
+        
+    return redirect("/")
+
 
 
 # ---------------- DELETE USER (ADMIN) ----------------
@@ -323,9 +365,20 @@ def index():
     kitchen_address = user_info[1] if user_info else "Bangalore, India"
     is_owner = user_info[2] if user_info else 0
 
-    conn.close()
-
+    # 7-Day Revenue Data
+    chart_labels = []
+    chart_data = []
     now = datetime.now()
+    
+    for i in range(6, -1, -1):
+        day = now - timedelta(days=i)
+        day_str = day.strftime("%Y-%m-%d")
+        chart_labels.append(day.strftime("%b %d"))
+        
+        cursor.execute("SELECT COALESCE(SUM(total), 0) FROM orders WHERE user_id=? AND date(date)=?", (user_id, day_str))
+        chart_data.append(cursor.fetchone()[0])
+
+    conn.close()
 
     return render_template(
         "index.html",
@@ -338,7 +391,9 @@ def index():
         today_revenue=today_revenue,
         kitchen_name=kitchen_name,
         kitchen_address=kitchen_address,
-        is_owner=is_owner
+        is_owner=is_owner,
+        chart_labels=chart_labels,
+        chart_data=chart_data
     )
 
 
