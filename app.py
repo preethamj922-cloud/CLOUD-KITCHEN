@@ -1,12 +1,52 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, Response
 import sqlite3
 from datetime import datetime, timedelta
 import os
+import csv
+import io
 
 app = Flask(__name__)
 app.secret_key = "cloudkitchen123"
 
 DB_PATH = "cloud_kitchen.db"
+
+@app.before_request
+def before_request_checks():
+    if request.endpoint == 'static':
+        return
+        
+    # Check if user is banned
+    if session.get("user_id") and request.endpoint != 'logout':
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT is_banned FROM users WHERE id=?", (session["user_id"],))
+            user_banned = cursor.fetchone()
+            conn.close()
+            
+            if user_banned and user_banned[0] == 1:
+                session.clear()
+                return render_template("login.html", error="Access Denied: Your account has been temporarily suspended.")
+        except:
+            pass
+
+    if 'visited' not in session:
+        session['visited'] = True
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE site_stats SET visits = visits + 1 WHERE id = 1")
+            
+            # Log the visit
+            ip_address = request.remote_addr
+            visit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            username = session.get('user', 'Guest')
+            cursor.execute("INSERT INTO visit_logs (ip_address, visit_time, username) VALUES (?, ?, ?)", (ip_address, visit_time, username))
+            
+            conn.commit()
+            conn.close()
+        except:
+            pass
 
 
 def get_db_connection():
@@ -53,6 +93,34 @@ def init_db():
         daily_order_number INTEGER DEFAULT 0
     )
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS site_stats(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        visits INTEGER DEFAULT 0
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS visit_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip_address TEXT,
+        visit_time TEXT,
+        username TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS settings(
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """)
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('announcement', '')")
+
+    cursor.execute("SELECT COUNT(*) FROM site_stats")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO site_stats (visits) VALUES (0)")
 
     conn.commit()
 
@@ -105,6 +173,9 @@ def migrate_daily_order_numbers(conn):
         conn.commit()
     if "is_owner" not in user_columns:
         cursor.execute("ALTER TABLE users ADD COLUMN is_owner INTEGER DEFAULT 0")
+        conn.commit()
+    if "is_banned" not in user_columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0")
         conn.commit()
 
     conn.close()
@@ -201,7 +272,7 @@ def admin():
         return "Access Denied: Only website owners can access this page", 403
     
     # Get all registered users
-    cursor.execute("SELECT id, username, password, kitchen_name, kitchen_address, is_owner FROM users ORDER BY id DESC")
+    cursor.execute("SELECT id, username, password, kitchen_name, kitchen_address, is_owner, is_banned FROM users ORDER BY id DESC")
     all_users = cursor.fetchall()
     
     # Global Stats
@@ -213,9 +284,29 @@ def admin():
     global_orders = stats[0] if stats else 0
     global_revenue = stats[1] if stats else 0
 
+    try:
+        cursor.execute("SELECT visits FROM site_stats WHERE id = 1")
+        site_visits_row = cursor.fetchone()
+        site_visits = site_visits_row[0] if site_visits_row else 0
+    except:
+        site_visits = 0
+
+    try:
+        cursor.execute("SELECT ip_address, visit_time, username FROM visit_logs ORDER BY id DESC LIMIT 50")
+        recent_visits = cursor.fetchall()
+    except:
+        recent_visits = []
+
+    try:
+        cursor.execute("SELECT value FROM settings WHERE key='announcement'")
+        announcement_row = cursor.fetchone()
+        announcement = announcement_row[0] if announcement_row else ""
+    except:
+        announcement = ""
+
     conn.close()
     
-    return render_template("admin.html", users=all_users, total_users=total_users, global_orders=global_orders, global_revenue=global_revenue)
+    return render_template("admin.html", users=all_users, total_users=total_users, global_orders=global_orders, global_revenue=global_revenue, site_visits=site_visits, recent_visits=recent_visits, announcement=announcement)
 
 
 # ---------------- IMPERSONATE USER (ADMIN) ----------------
@@ -290,6 +381,42 @@ def admin_delete_user(user_id):
     return redirect("/admin")
 
 
+# ---------------- TOGGLE BAN USER (ADMIN) ----------------
+@app.route("/admin/toggle_ban/<int:user_id>")
+def admin_toggle_ban(user_id):
+    if not session.get("user_id"):
+        return redirect("/login")
+    
+    current_user_id = session.get("user_id")
+    
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Check if current user is owner
+    cursor.execute("SELECT is_owner FROM users WHERE id=?", (current_user_id,))
+    user_info = cursor.fetchone()
+    
+    if not user_info or user_info[0] != 1:
+        conn.close()
+        return "Access Denied", 403
+    
+    # Prevent owner from banning themselves
+    if user_id == current_user_id:
+        conn.close()
+        return redirect("/admin?error=Cannot%20ban%20your%20own%20account")
+        
+    cursor.execute("SELECT is_banned FROM users WHERE id=?", (user_id,))
+    target_user = cursor.fetchone()
+    
+    if target_user:
+        new_status = 0 if target_user[0] == 1 else 1
+        cursor.execute("UPDATE users SET is_banned=? WHERE id=?", (new_status, user_id))
+        conn.commit()
+        
+    conn.close()
+    return redirect("/admin")
+
+
 # ---------------- RESET PASSWORD (ADMIN) ----------------
 @app.route("/admin/reset_password", methods=["POST"])
 def admin_reset_password():
@@ -330,6 +457,98 @@ def admin_reset_password():
     conn.close()
     
     return redirect("/admin?success=Password%20reset%20successfully")
+
+# ---------------- BROADCAST ANNOUNCEMENT (ADMIN) ----------------
+@app.route("/admin/announcement", methods=["POST"])
+def admin_announcement():
+    if not session.get("user_id"):
+        return redirect("/login")
+    
+    current_user_id = session.get("user_id")
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT is_owner FROM users WHERE id=?", (current_user_id,))
+    user_info = cursor.fetchone()
+    
+    if not user_info or user_info[0] != 1:
+        conn.close()
+        return "Access Denied", 403
+        
+    announcement = request.form.get("announcement", "")
+    
+    cursor.execute("UPDATE settings SET value=? WHERE key='announcement'", (announcement,))
+    conn.commit()
+    conn.close()
+    
+    return redirect("/admin?success=Announcement%20updated")
+
+# ---------------- EXPORT USERS (ADMIN) ----------------
+@app.route("/admin/export/users")
+def export_users():
+    if not session.get("user_id"):
+        return redirect("/login")
+        
+    current_user_id = session.get("user_id")
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT is_owner FROM users WHERE id=?", (current_user_id,))
+    user_info = cursor.fetchone()
+    
+    if not user_info or user_info[0] != 1:
+        conn.close()
+        return "Access Denied", 403
+        
+    cursor.execute("SELECT id, username, kitchen_name, kitchen_address, is_owner FROM users ORDER BY id DESC")
+    users = cursor.fetchall()
+    conn.close()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Username", "Kitchen Name", "Kitchen Address", "Role"])
+    for user in users:
+        role = "Owner" if user[4] == 1 else "User"
+        writer.writerow([user[0], user[1], user[2], user[3], role])
+        
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=users_export.csv"}
+    )
+
+# ---------------- EXPORT VISITS (ADMIN) ----------------
+@app.route("/admin/export/visits")
+def export_visits():
+    if not session.get("user_id"):
+        return redirect("/login")
+        
+    current_user_id = session.get("user_id")
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT is_owner FROM users WHERE id=?", (current_user_id,))
+    user_info = cursor.fetchone()
+    
+    if not user_info or user_info[0] != 1:
+        conn.close()
+        return "Access Denied", 403
+        
+    cursor.execute("SELECT id, ip_address, visit_time, username FROM visit_logs ORDER BY id DESC")
+    visits = cursor.fetchall()
+    conn.close()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "IP Address", "Timestamp", "Username"])
+    for visit in visits:
+        writer.writerow([visit[0], visit[1], visit[2], visit[3]])
+        
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=visits_export.csv"}
+    )
 
 # ---------------- HOME ----------------
 @app.route("/")
@@ -378,6 +597,13 @@ def index():
         cursor.execute("SELECT COALESCE(SUM(total), 0) FROM orders WHERE user_id=? AND date(date)=?", (user_id, day_str))
         chart_data.append(cursor.fetchone()[0])
 
+    try:
+        cursor.execute("SELECT value FROM settings WHERE key='announcement'")
+        announcement_row = cursor.fetchone()
+        announcement = announcement_row[0] if announcement_row else ""
+    except:
+        announcement = ""
+
     conn.close()
 
     return render_template(
@@ -393,7 +619,8 @@ def index():
         kitchen_address=kitchen_address,
         is_owner=is_owner,
         chart_labels=chart_labels,
-        chart_data=chart_data
+        chart_data=chart_data,
+        announcement=announcement
     )
 
 

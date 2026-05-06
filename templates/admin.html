@@ -192,23 +192,45 @@ body {
         </div>
     </div>
 
+    <!-- Broadcast Announcement -->
+    <div class="card p-4 mb-4" style="border-left: 4px solid var(--danger);">
+        <h5 class="mb-3"><i class="fas fa-bullhorn me-2" style="color: var(--danger);"></i>Broadcast Announcement</h5>
+        <form method="POST" action="/admin/announcement">
+            <div class="input-group">
+                <input type="text" name="announcement" class="form-control" placeholder="Enter a system message to broadcast to all users..." value="{{ announcement }}" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,179,71,0.25); color: var(--text);">
+                <button type="submit" class="btn btn-danger" style="border-radius: 0 18px 18px 0;"><i class="fas fa-broadcast-tower me-2"></i>Broadcast</button>
+            </div>
+            {% if announcement %}
+                <small class="text-success mt-2 d-block"><i class="fas fa-check-circle me-1"></i>Currently broadcasting to all users.</small>
+            {% else %}
+                <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i>No active announcement. Enter text to broadcast, or leave blank to clear.</small>
+            {% endif %}
+        </form>
+    </div>
+
     <!-- Global Stats Row -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card p-3 text-center" style="border-top: 4px solid #17a2b8;">
+                <h6 class="text-muted mb-1"><i class="fas fa-eye me-2" style="color: #17a2b8;"></i>Site Visits</h6>
+                <h3 class="mb-0" style="color: var(--text);">{{ site_visits }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3 mt-3 mt-md-0">
             <div class="card p-3 text-center" style="border-top: 4px solid var(--accent);">
                 <h6 class="text-muted mb-1"><i class="fas fa-users me-2" style="color: var(--accent);"></i>Total Users</h6>
                 <h3 class="mb-0" style="color: var(--text);">{{ total_users }}</h3>
             </div>
         </div>
-        <div class="col-md-4 mt-3 mt-md-0">
+        <div class="col-md-3 mt-3 mt-md-0">
             <div class="card p-3 text-center" style="border-top: 4px solid var(--accent-strong);">
-                <h6 class="text-muted mb-1"><i class="fas fa-shopping-bag me-2" style="color: var(--accent-strong);"></i>Total Orders Processed</h6>
+                <h6 class="text-muted mb-1"><i class="fas fa-shopping-bag me-2" style="color: var(--accent-strong);"></i>Total Orders</h6>
                 <h3 class="mb-0" style="color: var(--text);">{{ global_orders }}</h3>
             </div>
         </div>
-        <div class="col-md-4 mt-3 mt-md-0">
+        <div class="col-md-3 mt-3 mt-md-0">
             <div class="card p-3 text-center" style="border-top: 4px solid var(--danger);">
-                <h6 class="text-muted mb-1"><i class="fas fa-rupee-sign me-2" style="color: var(--danger);"></i>Total Platform Revenue</h6>
+                <h6 class="text-muted mb-1"><i class="fas fa-rupee-sign me-2" style="color: var(--danger);"></i>Total Revenue</h6>
                 <h3 class="mb-0" style="color: var(--text);">₹{{ global_revenue }}</h3>
             </div>
         </div>
@@ -221,9 +243,12 @@ body {
                 <p class="text-muted mb-0">Manage all registered accounts.</p>
             </div>
             <div>
-                <div class="input-group">
-                    <span class="input-group-text" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,179,71,0.25); border-right: none; color: var(--muted);"><i class="fas fa-search"></i></span>
-                    <input type="text" id="userSearch" class="form-control" placeholder="Search users or kitchens..." style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,179,71,0.25); border-left: none; color: var(--text);">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,179,71,0.25); border-right: none; color: var(--muted);"><i class="fas fa-search"></i></span>
+                        <input type="text" id="userSearch" class="form-control" placeholder="Search users or kitchens..." style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,179,71,0.25); border-left: none; color: var(--text);">
+                    </div>
+                    <a href="/admin/export/users" class="btn btn-secondary text-nowrap"><i class="fas fa-file-csv me-2"></i>Export CSV</a>
                 </div>
             </div>
         </div>
@@ -251,7 +276,11 @@ body {
                             <td>{{ user[3] }}</td>
                             <td>{{ user[4] }}</td>
                             <td>
-                                {% if user[5] == 1 %}
+                                {% if user[6] == 1 %}
+                                    <span class="badge bg-danger p-2" style="border-radius: 8px;">
+                                        <i class="fas fa-ban me-1"></i>BANNED
+                                    </span>
+                                {% elif user[5] == 1 %}
                                     <span class="badge-owner">
                                         <i class="fas fa-crown me-1"></i>Website Owner
                                     </span>
@@ -268,6 +297,17 @@ body {
                                 <button class="btn btn-sm btn-warning me-1" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetPasswordModal" data-user-id="{{ user[0] }}" data-username="{{ user[1] }}">
                                     <i class="fas fa-key"></i>
                                 </button>
+                                {% if user[5] != 1 %}
+                                    {% if user[6] == 1 %}
+                                        <a href="/admin/toggle_ban/{{ user[0] }}" class="btn btn-sm btn-success me-1" title="Unban User" onclick="return confirm('Are you sure you want to unban {{ user[1] }}?');">
+                                            <i class="fas fa-unlock"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="/admin/toggle_ban/{{ user[0] }}" class="btn btn-sm" style="background: #e67e22; color: white; border: none;" title="Ban User" onclick="return confirm('Are you sure you want to temporarily ban {{ user[1] }}?');">
+                                            <i class="fas fa-lock"></i>
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
                                 <a href="/admin/delete/{{ user[0] }}" class="btn btn-sm btn-danger" title="Delete User" onclick="return confirm('Are you sure you want to delete this user?');">
                                     <i class="fas fa-trash"></i>
                                 </a>
@@ -287,6 +327,54 @@ body {
         </div>
     </div>
 
+    <div class="card p-4 mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div>
+                <h4 class="mb-1">Recent Site Visits</h4>
+                <p class="text-muted mb-0">Log of recent visitors and their timestamps.</p>
+            </div>
+            <div>
+                <a href="/admin/export/visits" class="btn btn-secondary text-nowrap"><i class="fas fa-file-csv me-2"></i>Export CSV</a>
+            </div>
+        </div>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="position: sticky; top: 0; background: var(--accent); z-index: 1;">#</th>
+                        <th style="position: sticky; top: 0; background: var(--accent); z-index: 1;">Timestamp</th>
+                        <th style="position: sticky; top: 0; background: var(--accent); z-index: 1;">Username</th>
+                        <th style="position: sticky; top: 0; background: var(--accent); z-index: 1;">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_visits %}
+                        {% for visit in recent_visits %}
+                        <tr>
+                            <td>#{{ loop.index }}</td>
+                            <td>{{ visit[1] }}</td>
+                            <td>
+                                {% if visit[2] == 'Guest' %}
+                                    <span class="text-muted"><i class="fas fa-user-secret me-1"></i>Guest</span>
+                                {% else %}
+                                    <strong><i class="fas fa-user me-1 text-success"></i>{{ visit[2] }}</strong>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ visit[0] }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <i class="fas fa-history fa-2x mb-2" style="color: rgba(255,179,71,0.35);"></i>
+                                <p>No visits logged yet.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="footer mt-4">
         2026 Cloud Kitchen Billing System | Admin Access
     </div>

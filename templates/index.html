@@ -170,6 +170,14 @@ body {
 </head>
 <body>
 <div class="page-shell container-lg">
+    {% if announcement %}
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert" style="background: rgba(23, 162, 184, 0.1); border: 1px solid #17a2b8; color: #f7f7f7; border-radius: 14px;">
+        <i class="fas fa-bullhorn me-2" style="color: #17a2b8;"></i>
+        <strong>System Announcement:</strong> {{ announcement }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="filter: invert(1);"></button>
+    </div>
+    {% endif %}
+
     <div class="page-header">
         <div>
             <h2><i class="fas fa-utensils me-2"></i>Cloud Kitchen Billing System Dashboard</h2>
